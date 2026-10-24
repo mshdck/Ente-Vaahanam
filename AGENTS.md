@@ -7,3 +7,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+# Workflow Rules
+
+- **Commit and Push**: When the user requests to "commit and push", immediately and directly stage all relevant changes (`git add`), commit with a clear and concise message (`git commit -m "..."`), and push to the current remote branch (`git push origin <branch>`) without asking for additional confirmation or planning steps.
+
