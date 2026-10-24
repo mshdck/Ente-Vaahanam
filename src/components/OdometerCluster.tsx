@@ -38,14 +38,6 @@ export default function OdometerCluster({
     const newNum = parseInt(value, 10);
     if (isNaN(newNum) || newNum < 0) return;
 
-    // Warning confirmation if attempting to rollback odometer reading
-    if (newNum < odometer) {
-      const confirmRollback = window.confirm(
-        `The entered odometer reading (${newNum.toLocaleString("en-IN")} ${unit}) is lower than the current reading (${odometer.toLocaleString("en-IN")} ${unit}). Are you sure you want to rollback the odometer?`
-      );
-      if (!confirmRollback) return;
-    }
-
     startTransition(async () => {
       const formData = new FormData();
       formData.set("odometer", String(newNum));
@@ -78,8 +70,11 @@ export default function OdometerCluster({
         </div>
 
         {isEditing ? (
-          <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2 sm:mt-0"
+          >
+            <div className="flex items-center gap-2">
               <input
                 ref={inputRef}
                 id="odometer"
@@ -87,38 +82,40 @@ export default function OdometerCluster({
                 type="number"
                 inputMode="numeric"
                 min={0}
-                className="input !w-32 !py-1.5 text-center font-mono text-sm"
+                className="input flex-1 sm:!w-36 !py-2 sm:!py-1.5 text-center font-mono text-[16px] sm:text-sm no-spinners [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder="New reading"
                 required
                 disabled={isPending}
               />
-              <span className="text-xs uppercase font-medium text-zinc-500">
+              <span className="text-xs uppercase font-medium text-zinc-500 shrink-0">
                 {unit}
               </span>
             </div>
-            <button
-              type="submit"
-              disabled={isPending || value.trim() === ""}
-              className="btn !py-1.5 !px-3 text-xs shrink-0 flex items-center gap-1.5"
-            >
-              {isPending ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : (
-                <Check size={13} />
-              )}
-              <span>Save</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isPending}
-              className="btn-ghost !py-1.5 !px-3 text-xs shrink-0 flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200"
-            >
-              <X size={13} />
-              <span>Cancel</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={isPending || value.trim() === ""}
+                className="btn flex-1 sm:flex-none !py-2 sm:!py-1.5 !px-3.5 text-xs shrink-0 flex items-center justify-center gap-1.5"
+              >
+                {isPending ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <Check size={13} />
+                )}
+                <span>Save</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={isPending}
+                className="btn-ghost flex-1 sm:flex-none !py-2 sm:!py-1.5 !px-3.5 text-xs shrink-0 flex items-center justify-center gap-1.5 text-zinc-400 hover:text-zinc-200"
+              >
+                <X size={13} />
+                <span>Cancel</span>
+              </button>
+            </div>
           </form>
         ) : (
           <button

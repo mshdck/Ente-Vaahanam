@@ -26,6 +26,15 @@
   .cockpit-glow {
     box-shadow: 0 0 25px -5px rgba(20, 184, 166, 0.15);
   }
+  .no-spinners::-webkit-inner-spin-button,
+  .no-spinners::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .no-spinners {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
 }
 
 /* Custom smooth dark scrollbars */
