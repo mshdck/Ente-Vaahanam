@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   Plus,
-  Gauge,
   Check,
   X,
   ChevronRight,
@@ -17,7 +16,8 @@ import ServiceTypeIcon from "@/components/ServiceTypeIcon";
 import ServiceIntervalProgress from "@/components/ServiceIntervalProgress";
 import NotificationsCard from "@/components/NotificationsCard";
 import ConfirmButton from "@/components/ConfirmButton";
-import { closeReminder, deleteVehicle, updateOdometer } from "@/app/actions";
+import OdometerCluster from "@/components/OdometerCluster";
+import { closeReminder, deleteVehicle } from "@/app/actions";
 import { createClient } from "@/lib/supabase/server";
 import {
   describeDue,
@@ -90,45 +90,11 @@ export default async function VehicleDashboard({
           </div>
 
           {/* Digital Odometer Cluster */}
-          <div className="mt-4 rounded-xl border border-zinc-800/80 bg-zinc-950/70 p-3 sm:p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                  <Gauge size={13} className="text-teal-400" />
-                  Digital Cluster Odometer
-                </span>
-                <div className="mt-1 flex items-baseline gap-2 font-mono">
-                  <span className="text-2xl sm:text-3xl font-black tracking-widest text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.3)]">
-                    {vehicle.odometer.toLocaleString("en-IN")}
-                  </span>
-                  <span className="text-xs uppercase font-medium text-zinc-500">
-                    {unit}
-                  </span>
-                </div>
-              </div>
-
-              {/* Quick Update Odometer Form */}
-              <form
-                action={updateOdometer.bind(null, id)}
-                className="flex items-center gap-2"
-              >
-                <input
-                  id="odometer"
-                  name="odometer"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  className="input !w-32 !py-1.5 text-center font-mono text-sm"
-                  defaultValue={vehicle.odometer}
-                  placeholder="New km"
-                  required
-                />
-                <button className="btn !py-1.5 !px-3 text-xs shrink-0">
-                  Update
-                </button>
-              </form>
-            </div>
-          </div>
+          <OdometerCluster
+            vehicleId={id}
+            odometer={vehicle.odometer}
+            unit={unit}
+          />
         </div>
 
         {/* Just Closed Follow-up Notification */}
