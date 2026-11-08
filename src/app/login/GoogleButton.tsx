@@ -1,34 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 export default function GoogleButton() {
+  const { signIn } = useAuthActions();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  async function signIn() {
+  async function handleSignIn() {
     setLoading(true);
     setErrorMessage("");
     try {
-      const redirectUrl = `${location.origin}/auth/callback`;
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl,
-        },
-      });
-
-      if (error) {
-        setErrorMessage(error.message);
-        setLoading(false);
-        return;
-      }
-
-      if (data?.url) {
-        window.location.href = data.url;
-      }
+      await signIn("google", { redirectTo: "/" });
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : "Sign-in initialization failed");
       setLoading(false);
@@ -38,7 +22,7 @@ export default function GoogleButton() {
   return (
     <>
       <button
-        onClick={signIn}
+        onClick={handleSignIn}
         disabled={loading}
         className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/20 bg-white px-4 py-3 font-semibold text-zinc-900 shadow-xl shadow-black/40 transition-all hover:bg-neutral-100 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
       >
@@ -60,14 +44,11 @@ export default function GoogleButton() {
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
           />
         </svg>
-        <span>{loading ? "Connecting to Google..." : "Continue with Google"}</span>
+        <span>{loading ? "Connecting..." : "Continue with Google"}</span>
       </button>
 
       {errorMessage && (
-        <div className="rounded-xl border border-rose-900/50 bg-rose-950/40 p-3 text-center text-xs text-rose-300">
-          <p className="font-semibold text-rose-200">OAuth Error:</p>
-          <p className="mt-0.5 break-all">{errorMessage}</p>
-        </div>
+        <p className="text-center text-xs text-rose-400">{errorMessage}</p>
       )}
     </>
   );

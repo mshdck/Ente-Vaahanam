@@ -18,7 +18,9 @@ import NotificationsCard from "@/components/NotificationsCard";
 import ConfirmButton from "@/components/ConfirmButton";
 import OdometerCluster from "@/components/OdometerCluster";
 import { closeReminder, deleteVehicle } from "@/app/actions";
-import { createClient } from "@/lib/supabase/server";
+import { fetchAuthQuery } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
   describeDue,
   inr,
@@ -27,7 +29,7 @@ import {
   todayIST,
   urgency,
 } from "@/lib/reminders";
-import type { ServiceRecord, Vehicle } from "@/lib/types";
+import { toVehicle, toServiceRecord, type ServiceRecord } from "@/lib/types";
 
 export default async function VehicleDashboard({
   params,
@@ -35,24 +37,25 @@ export default async function VehicleDashboard({
 }: PageProps<"/vehicles/[id]">) {
   const { id } = await params;
   const { closed } = await searchParams;
-  const supabase = await createClient();
-  const [{ data: vehicle }, { data: recs }] = await Promise.all([
-    supabase.from("vehicles").select("*").eq("id", id).single<Vehicle>(),
-    supabase
-      .from("service_records")
-      .select("*")
-      .eq("vehicle_id", id)
-      .order("done_on", { ascending: false })
-      .order("created_at", { ascending: false }),
-  ]);
+  let vehicleDoc = null;
+  let recDocs: any = [];
+  try {
+    [vehicleDoc, recDocs] = await Promise.all([
+      fetchAuthQuery(api.vehicles.get, { id: id as Id<"vehicles"> }),
+      fetchAuthQuery(api.records.listByVehicle, { vehicleId: id as Id<"vehicles"> }),
+    ]);
+  } catch {
+    notFound();
+  }
 
-  if (!vehicle) notFound();
-  const records = (recs ?? []) as ServiceRecord[];
+  if (!vehicleDoc) notFound();
+  const vehicle = toVehicle(vehicleDoc);
+  const records: ServiceRecord[] = (recDocs ?? []).map(toServiceRecord);
   const today = todayIST();
   const unit = vehicle.distance_unit;
 
   const upcoming = records
-    .map((r) => ({ r, status: reminderStatus(r, vehicle.odometer, today) }))
+    .map((r: ServiceRecord) => ({ r, status: reminderStatus(r, vehicle.odometer, today) }))
     .filter(
       (x): x is { r: ServiceRecord; status: NonNullable<typeof x.status> } =>
         x.status !== null,
@@ -65,7 +68,7 @@ export default async function VehicleDashboard({
 
   const justClosed =
     typeof closed === "string"
-      ? records.find((r) => r.id === closed)
+      ? records.find((r: ServiceRecord) => r.id === closed)
       : undefined;
 
   return (

@@ -3,19 +3,28 @@ import { Trash2, AlertTriangle } from "lucide-react";
 import Shell from "@/components/Shell";
 import ServiceForm from "@/components/ServiceForm";
 import { deleteRecord, saveRecord } from "@/app/actions";
-import { createClient } from "@/lib/supabase/server";
+import { fetchAuthQuery } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import ConfirmButton from "@/components/ConfirmButton";
-import type { ServiceRecord, Vehicle } from "@/lib/types";
+import { toVehicle, toServiceRecord } from "@/lib/types";
 
 export default async function EditRecord({ params, searchParams }: PageProps<"/vehicles/[id]/records/[rid]/edit">) {
   const { id, rid } = await params;
   const { error } = await searchParams;
-  const supabase = await createClient();
-  const [{ data: vehicle }, { data: r }] = await Promise.all([
-    supabase.from("vehicles").select("*").eq("id", id).single<Vehicle>(),
-    supabase.from("service_records").select("*").eq("id", rid).eq("vehicle_id", id).single<ServiceRecord>(),
-  ]);
-  if (!vehicle || !r) notFound();
+  let vehicleDoc = null;
+  let rDoc = null;
+  try {
+    [vehicleDoc, rDoc] = await Promise.all([
+      fetchAuthQuery(api.vehicles.get, { id: id as Id<"vehicles"> }),
+      fetchAuthQuery(api.records.get, { id: rid as Id<"serviceRecords"> }),
+    ]);
+  } catch {
+    notFound();
+  }
+  if (!vehicleDoc || !rDoc || rDoc.vehicleId !== (id as Id<"vehicles">)) notFound();
+  const vehicle = toVehicle(vehicleDoc);
+  const r = toServiceRecord(rDoc);
 
   return (
     <Shell back={`/vehicles/${id}`} title="Edit Service Record">

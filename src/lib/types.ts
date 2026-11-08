@@ -1,3 +1,5 @@
+import type { Doc } from "@/convex/_generated/dataModel";
+
 export const SERVICE_TYPES = [
   "oil_change", "insurance", "tires", "brakes", "battery", "part_replacement", "repair", "other",
 ] as const;
@@ -40,3 +42,34 @@ export type ServiceRecord = {
   last_notified_stage: "due_soon" | "overdue" | null;
   last_notified_at: string | null;
 };
+
+export function toVehicle(doc: Doc<"vehicles">): Vehicle {
+  return {
+    id: doc._id,
+    name: doc.name,
+    make: doc.make ?? null,
+    model: doc.model ?? null,
+    year: doc.year ?? null,
+    plate_number: doc.plateNumber ?? null,
+    odometer: doc.odometer,
+    distance_unit: doc.distanceUnit,
+  };
+}
+
+export function toServiceRecord(doc: Doc<"serviceRecords">): ServiceRecord {
+  return {
+    id: doc._id,
+    vehicle_id: doc.vehicleId,
+    type: doc.type,
+    custom_label: doc.customLabel ?? null,
+    done_on: doc.doneOn,
+    odometer: doc.odometer ?? null,
+    cost: doc.cost ?? null,
+    notes: doc.notes ?? null,
+    remind_on: doc.remindOn ?? null,
+    remind_at_odometer: doc.remindAtOdometer ?? null,
+    reminder_state: doc.reminderState,
+    last_notified_stage: doc.lastNotifiedStage ?? null,
+    last_notified_at: doc.lastNotifiedAt ? new Date(doc.lastNotifiedAt).toISOString() : null,
+  };
+}

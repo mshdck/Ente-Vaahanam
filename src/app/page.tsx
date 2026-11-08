@@ -2,23 +2,19 @@ import Link from "next/link";
 import { Plus, ChevronRight, Gauge, Car, AlertCircle, CheckCircle2 } from "lucide-react";
 import Shell from "@/components/Shell";
 import LicensePlate from "@/components/LicensePlate";
-import { createClient } from "@/lib/supabase/server";
+import { fetchAuthQuery } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
 import { reminderStatus, todayIST } from "@/lib/reminders";
-import type { ServiceRecord, Vehicle } from "@/lib/types";
+import { toVehicle, toServiceRecord, type Vehicle, type ServiceRecord } from "@/lib/types";
 
 export default async function Home() {
-  const supabase = await createClient();
-  const [{ data: vData }, { data: rData }] = await Promise.all([
-    supabase.from("vehicles").select("*").order("created_at"),
-    supabase
-      .from("service_records")
-      .select("*")
-      .eq("reminder_state", "active")
-      .or("remind_on.not.is.null,remind_at_odometer.not.is.null"),
+  const [vDocs, rDocs] = await Promise.all([
+    fetchAuthQuery(api.vehicles.list),
+    fetchAuthQuery(api.records.listActiveReminders),
   ]);
 
-  const vehicles = (vData ?? []) as Vehicle[];
-  const reminders = (rData ?? []) as ServiceRecord[];
+  const vehicles: Vehicle[] = (vDocs ?? []).map(toVehicle);
+  const reminders: ServiceRecord[] = (rDocs ?? []).map((item: any) => toServiceRecord(item.record));
   const today = todayIST();
 
   return (
@@ -62,12 +58,11 @@ export default async function Home() {
 
           {/* Vehicle Cards */}
           <ul className="space-y-3">
-            {vehicles.map((v) => {
-              const vReminders = reminders.filter((r) => r.vehicle_id === v.id);
+            {vehicles.map((v: Vehicle) => {
+              const vReminders = reminders.filter((r: ServiceRecord) => r.vehicle_id === v.id);
               const statuses = vReminders
-                .map((r) => reminderStatus(r, v.odometer, today))
+                .map((r: ServiceRecord) => reminderStatus(r, v.odometer, today))
                 .filter(Boolean);
-
               const hasOverdue = statuses.includes("overdue");
               const hasDueSoon = statuses.includes("due_soon");
 

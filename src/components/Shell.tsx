@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, LogOut, Gauge } from "lucide-react";
+import { ArrowLeft, Gauge } from "lucide-react";
+import SignOutButton from "./SignOutButton";
 
 export default function Shell({
   children,
@@ -35,17 +36,7 @@ export default function Shell({
           )}
         </h1>
 
-        {!back && (
-          <form action="/auth/signout" method="post">
-            <button
-              className="flex items-center gap-1.5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-all hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-200 active:scale-95 cursor-pointer"
-              data-signout
-            >
-              <LogOut size={13} />
-              <span>Sign out</span>
-            </button>
-          </form>
-        )}
+        {!back && <SignOutButton />}
       </header>
 
       <main>{children}</main>

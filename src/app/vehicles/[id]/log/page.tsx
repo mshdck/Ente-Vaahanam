@@ -3,9 +3,11 @@ import { AlertTriangle } from "lucide-react";
 import Shell from "@/components/Shell";
 import ServiceForm from "@/components/ServiceForm";
 import { saveRecord } from "@/app/actions";
-import { createClient } from "@/lib/supabase/server";
+import { fetchAuthQuery } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { addMonths, todayIST } from "@/lib/reminders";
-import { SERVICE_TYPES, type ServiceRecord, type ServiceType, type Vehicle } from "@/lib/types";
+import { SERVICE_TYPES, toVehicle, toServiceRecord, type ServiceRecord, type ServiceType } from "@/lib/types";
 
 /** Work out "every N months / N km" from a previous entry's own reminder. */
 function intervalOf(r: ServiceRecord) {
@@ -25,19 +27,25 @@ function intervalOf(r: ServiceRecord) {
 export default async function LogService({ params, searchParams }: PageProps<"/vehicles/[id]/log">) {
   const { id } = await params;
   const { from, type: typeParam, error } = await searchParams;
-  const supabase = await createClient();
-  const { data: vehicle } = await supabase.from("vehicles").select("*").eq("id", id).single<Vehicle>();
-  if (!vehicle) notFound();
+  let vehicleDoc = null;
+  try {
+    vehicleDoc = await fetchAuthQuery(api.vehicles.get, { id: id as Id<"vehicles"> });
+  } catch {
+    notFound();
+  }
+  if (!vehicleDoc) notFound();
+  const vehicle = toVehicle(vehicleDoc);
 
   let prev: ServiceRecord | null = null;
   if (typeof from === "string") {
-    const { data } = await supabase
-      .from("service_records")
-      .select("*")
-      .eq("id", from)
-      .eq("vehicle_id", id)
-      .single<ServiceRecord>();
-    prev = data;
+    try {
+      const prevDoc = await fetchAuthQuery(api.records.get, { id: from as Id<"serviceRecords"> });
+      if (prevDoc && prevDoc.vehicleId === (id as Id<"vehicles">)) {
+        prev = toServiceRecord(prevDoc);
+      }
+    } catch {
+      prev = null;
+    }
   }
   const type = (prev?.type ?? (SERVICE_TYPES.includes(typeParam as ServiceType) ? typeParam : "oil_change")) as ServiceType;
   const iv = prev && type === "oil_change" ? intervalOf(prev) : { months: "", km: "" };
